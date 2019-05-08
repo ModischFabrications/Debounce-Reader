@@ -1,5 +1,5 @@
 #include <Arduino.h>
-#include "debounce_reader.h"
+#include "debouncer.h"
 
 #define ONBOARD 13
 
@@ -29,7 +29,38 @@ bool every(uint16_t ms)
   return false;
 }
 
-Debounce_Reader reader = Debounce_Reader();
+Debouncer reader = Debouncer();
+
+void print_state(bool reading)
+{
+  Serial.print(reader.read(reading));
+  Serial.print("#");
+
+  /* 
+  spamming Serial-prints blocks incoming commands for the bootloader.
+  If you have problems uploading:
+  1. Unplug device
+  2. Plug in again and press upload simultaneously
+  3. Increase this delay or baud if this happens regularly
+  */
+
+  delay(200);
+}
+
+void print_event(bool reading)
+{
+  Debouncer::STATE curr_state = reader.read(reading);
+
+  if (curr_state == Debouncer::STATE::ST_RISING)
+  {
+    Serial.print("R");
+  }
+  else if (curr_state == Debouncer::STATE::ST_FALLING)
+  {
+    Serial.print("F");
+  }
+  
+}
 
 void setup()
 {
@@ -47,15 +78,7 @@ void loop()
 {
   bool reading = (digitalRead(PIN_BTN) == LOW); // inverted (pullup)
 
-  /* live reading
-  Serial.print(reader.read(reading));
-  Serial.print("#");
-  delay(200);
-  */
-
-  // event only
-  if (reader.read(reading) == Debounce_Reader::STATE::ST_RISING)
-    Serial.print("X");
+  print_event(reading);
 
   if (every(5000))
   {

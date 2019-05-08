@@ -4,7 +4,7 @@
 
 const uint16_t DEF_DEBOUNCE_MS = 50;
 
-class Debounce_Reader
+class Debouncer
 {
 private:
     const uint16_t debounce_ms;
@@ -23,7 +23,7 @@ public:
         ST_FALLING = 1
     };
 
-    Debounce_Reader(uint16_t debounce_ms = DEF_DEBOUNCE_MS)
+    Debouncer(uint16_t debounce_ms = DEF_DEBOUNCE_MS)
         : debounce_ms(debounce_ms)
     {
     }
