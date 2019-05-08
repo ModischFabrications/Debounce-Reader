@@ -5,7 +5,6 @@
 const uint8_t PIN_BTN = 2;
 const uint16_t T_DEBOUNCE_MS = 50;
 
-
 void blink(uint8_t number_of_blinks)
 {
   for (uint8_t i = 0; i < number_of_blinks; i++)
@@ -17,49 +16,55 @@ void blink(uint8_t number_of_blinks)
   }
 }
 
-bool every(uint16_t ms){
+bool every(uint16_t ms)
+{
   static uint32_t next = 0;
 
-  if (next < millis()){
+  if (next < millis())
+  {
     next = millis() + ms;
     return true;
   }
   return false;
 }
 
-bool check_button_debounced(bool button_state)
+bool check_button_debounced(bool reading)
 {
   // this function will not trigger for the first
   // flank but for the "last", which should be stable
 
   static unsigned long last_debounce = 0;
-  static bool last_state = true;
+  static bool last_state = false;
+  static bool current_state = false;
 
   unsigned long now = millis();
 
-  if (button_state != last_state)
+  if (reading != last_state)
   {
     // recent change means it's still bouncing or somebody clicked
     last_debounce = now;
-    return false;
+    //return false;
   }
 
   if ((now - last_debounce) > T_DEBOUNCE_MS)
   {
     // value is old enough to be stable
 
-    // check if a real change has occured
-    if (button_state != last_state)
+    if (reading != current_state)
     {
-      last_state = button_state;
+      // this was a flank, act only once
+      current_state = reading;
 
-      // this implementation only cares for negative edges
-      if (!button_state)
+      // positive edge only
+      if (current_state)
       {
         return true;
       }
     }
   }
+
+  last_state = reading;
+
   return false;
 }
 
@@ -76,16 +81,15 @@ void setup()
 
 void loop()
 {
-  bool button_state = (digitalRead(PIN_BTN) == LOW); // inverted (pullup)
-  if (check_button_debounced(button_state))
+  bool reading = (digitalRead(PIN_BTN) == LOW); // inverted (pullup)
+  if (check_button_debounced(reading))
   {
     Serial.print("*BTN*");
   }
 
-  if (every(5000))
+  if (every(2000))
   {
     Serial.print("♥");
     blink(1);
   }
-
 }
