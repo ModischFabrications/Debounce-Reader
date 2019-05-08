@@ -1,4 +1,5 @@
 #include <Arduino.h>
+#include "debounce_reader.h"
 
 #define ONBOARD 13
 
@@ -28,52 +29,15 @@ bool every(uint16_t ms)
   return false;
 }
 
-bool check_button_debounced(bool reading)
-{
-  // this function will not trigger for the first
-  // flank but for the "last", which should be stable
-
-  static unsigned long last_debounce = 0;
-  static bool last_state = false;
-  static bool current_state = false;
-
-  unsigned long now = millis();
-
-  if (reading != last_state)
-  {
-    // recent change means it's still bouncing or somebody clicked
-    last_debounce = now;
-    //return false;
-  }
-
-  if ((now - last_debounce) > T_DEBOUNCE_MS)
-  {
-    // value is old enough to be stable
-
-    if (reading != current_state)
-    {
-      // this was a flank, act only once
-      current_state = reading;
-
-      // positive edge only
-      if (current_state)
-      {
-        return true;
-      }
-    }
-  }
-
-  last_state = reading;
-
-  return false;
-}
+Debounce_Reader reader = Debounce_Reader();
 
 void setup()
 {
   pinMode(ONBOARD, OUTPUT);
   pinMode(PIN_BTN, INPUT_PULLUP);
 
-  // announce user-program
+  // faster baud means less time spend off-code
+  //Serial.begin(38400);
   Serial.begin(9600);
   Serial.println("Hello there fellow");
   blink(2);
@@ -82,12 +46,18 @@ void setup()
 void loop()
 {
   bool reading = (digitalRead(PIN_BTN) == LOW); // inverted (pullup)
-  if (check_button_debounced(reading))
-  {
-    Serial.print("*BTN*");
-  }
 
-  if (every(2000))
+  /* live reading
+  Serial.print(reader.read(reading));
+  Serial.print("#");
+  delay(200);
+  */
+
+  // event only
+  if (reader.read(reading) == Debounce_Reader::STATE::ST_RISING)
+    Serial.print("X");
+
+  if (every(5000))
   {
     Serial.print("♥");
     blink(1);
